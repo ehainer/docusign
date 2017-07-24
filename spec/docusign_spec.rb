@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Docusign do
 
   before(:each) do
-    WebMock.enable_net_connect!
+    WebMock.allow_net_connect!
   end
 
   after(:each) do
