@@ -52,6 +52,40 @@ end
 CONTENT
       end
 
+      def copy_migrations
+        copy_migration 'create_docusign_envelopes'
+        copy_migration 'create_docusign_templates'
+        copy_migration 'create_docusign_signers'
+      end
+
+      protected
+
+        def copy_migration(filename)
+          if migration_exists?(Rails.root.join('db', 'migrate'), filename)
+            say_status('skipped', "Migration #{filename}.rb already exists")
+          else
+            copy_file "db/migrate/#{filename}.rb", Rails.root.join('db', 'migrate', "#{migration_number}_#{filename}.rb")
+          end
+        end
+
+        def migration_exists?(dirname, filename)
+          Dir.glob("#{dirname}/[0-9]*_*.rb").grep(/\d+_#{filename}.rb$/).first
+        end
+
+        def migration_id_exists?(dirname, id)
+          Dir.glob("#{dirname}/#{id}*").length > 0
+        end
+
+        def migration_number
+          @migration_number ||= Time.now.strftime("%Y%m%d%H%M%S").to_i
+
+          while migration_id_exists?(Rails.root.join('db', 'migrate'), @migration_number) do
+            @migration_number += 1
+          end
+
+          @migration_number
+        end
+
     end
   end
 end
