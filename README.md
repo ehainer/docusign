@@ -4,7 +4,7 @@
 
 # Docusign
 
-Trying to simplify the Docusign process with the help of the [docusign_rest](https://github.com/jondkinney/docusign_rest) gem.
+Trying to simplify the Docusign creation process.
 
 <span color="red">**Note:** This gem is used on a different project and will likely only ever be updated as needed to support that project... unless I happen to become overcome with boredom and decide to implement a bunch more features.</span>
 
@@ -36,12 +36,12 @@ class User < ApplicationRecord
 end
 ```
 
-With the new `documents` association you can now create embeddable Docusign documents with signers (among other things), like so:
+With the new `envelopes` association you can now create embeddable Docusign documents with signers (among other things), like so:
 
 ```ruby
 @user = User.first
 # Subject is a required field, body is not. Both parameters translate to the email subject/body of the delivered document
-@user.documents.create(subject: 'New Document', body: 'Welcome to your new document')
+@user.envelopes.create(email_subject: 'New Document', email_blurb: 'Welcome to your new document')
 ```
 
 ### Determining the Default Signer
@@ -58,10 +58,10 @@ Optionally, you can pass a block to either the `create` or `build` method of doc
 
 ```ruby
 @user = User.first
-@user.documents.create(subject: 'New Document') do |d|
+@user.envelopes.create(email_subject: 'New Document') do |d|
   # Define the file you want to use as the document to sign.
   # You can provide as many file paths as you'd like in this method, or call it multiple times
-  d.add_file '/path/to/the/pdf/document.pdf'
+  d.add_document '/path/to/the/pdf/document.pdf'
   
   # Without arguments, will attempt to add the default signer per the rules laid out in 'Determining the Default Signer' above
   d.add_signer
@@ -103,10 +103,10 @@ For each tabs *_at method the arguments are the same. The first is a unique stri
 Once a document has been created, it can be embedded in an iframe by using the included helper method:
 
 ```ruby
-# Where @document is an instance of Docusign::Document
-<%= embedded_document(@document, width: 1000, height: 1200) %>
+# Where @envelope is an instance of Docusign::Document
+<%= embedded_document(@envelope, width: 1000, height: 1200) %>
 # Or, to have a specific signer sign the document, provide the name and email of the recipient
-<%= embedded_document(@document, 'Bob Smith', 'bob@example.org', width: 1000, height: 1200) %>
+<%= embedded_document(@envelope, 'Bob Smith', 'bob@example.org', width: 1000, height: 1200) %>
 ```
 
 Where the first argument is the document you want to embded, the optional second and third arguments are the name/email of the signer you want to sign the document, and the optional last argument is a hash of html options for the iframe (i.e. - width, height, class, style, etc...)
@@ -114,9 +114,9 @@ Where the first argument is the document you want to embded, the optional second
 If you prefer to not embed the document, you can retrieve the url of the signing page by calling the documents `url` method
 
 ```ruby
-<%= @document.url %>
+<%= @envelope.url %>
 # Or, to have a specific signer sign the document, provide the name and email of the recipient
-<%= @document.url('Bob Smith', 'bob@example.org') %>
+<%= @envelope.url('Bob Smith', 'bob@example.org') %>
 ```
 
 The `url` method also accepts an optional third argument that's useful when not embedding, the return url for Docusign to redirect to after the user completes/declines/cancels the document. Docusign will redirect to that page with an `event` query string parameter representing the resulting user action (signing_complete, decline, cancel)
