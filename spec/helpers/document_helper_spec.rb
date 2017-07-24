@@ -1,0 +1,20 @@
+require 'spec_helper'
+
+describe Docusign::DocumentHelper do
+  
+  let(:envelope) do
+    Docusign::Envelope.create!(email_subject: Faker::Name.title, status: :sent) do |e|
+      e.add_document(file_fixture('pdf1.pdf').expand_path)
+      e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
+    end
+  end
+
+  it 'can create embedded document markup' do
+    w = [*1000..3000].sample
+    h = [*1000..3000].sample
+    iframe = embedded_document(envelope, width: w, height: h)
+    expect(iframe).to include("<iframe width=\"#{w}\" height=\"#{h}\"")
+    expect(iframe).to include('https://demo.docusign.net/Signing/startinsession.aspx')
+  end
+
+end

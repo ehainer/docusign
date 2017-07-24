@@ -1,0 +1,11 @@
+<% if completed? %>
+  COMPLETED SIGNING
+<% elsif declined? %>
+  DECLINED TO SIGN
+<% elsif cancelled? %>
+  FINISH SIGNING LATER
+<% elsif disallowed? %>
+  NOT PERMITTED TO SIGN AT THIS TIME
+<% elsif expired? %>
+  DOCUMENT EXPIRED
+<% end %>
