@@ -21,4 +21,10 @@ describe Docusign::Response do
     expect { response.special_thing = 1 }.to raise_error(NoMethodError)
   end
 
+  it 'will have a no response error if provided argument was not an HTTP response object' do
+    response = Docusign::Response.new
+    expect(response.code).to eq('NO_RESPONSE')
+    expect(response.message).to eq('Provided response object was not an instance of Net::HTTPResponse')
+  end
+
 end

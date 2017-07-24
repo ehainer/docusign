@@ -36,11 +36,6 @@ module Docusign
       unless @information
         begin
           response = get("#{Docusign.config.endpoint}/#{Docusign.config.version}/login_information", headers: default_headers)
-          puts "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-          puts Docusign.config.username
-          puts Docusign.config.password
-          puts Docusign.config.key
-          puts "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
           raise ::Docusign::LoginError, response.message if response.error?
           @information = response
         rescue => e

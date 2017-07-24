@@ -11,23 +11,9 @@ describe Docusign::DocumentHelper do
   end
 
   let(:envelope) do
-    begin
-      puts '---------------------------------'
-      puts Docusign.client.information.to_yaml
-      puts '---------------------------------'
-      Docusign::Envelope.create!(email_subject: Faker::Name.title, status: :sent) do |e|
-        e.add_document(file_fixture('pdf1.pdf').expand_path)
-        e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
-      end
-    rescue => e
-      envelope = Docusign::Envelope.new(email_subject: Faker::Name.title, status: :sent) do |e|
-        e.add_document(file_fixture('pdf1.pdf').expand_path)
-        e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
-      end
-      envelope.valid?
-      response = Docusign.client.post('envelopes', payload: envelope.send(:create_payload))
-      puts response.to_yaml
-      puts e.backtrace
+    Docusign::Envelope.create!(email_subject: Faker::Name.title, status: :sent) do |e|
+      e.add_document(file_fixture('pdf1.pdf').expand_path)
+      e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
     end
   end
 
