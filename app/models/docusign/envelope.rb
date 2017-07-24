@@ -76,8 +76,6 @@ module Docusign
       def create_envelope
         response = Docusign.client.post('envelopes', payload: create_payload)
 
-        puts create_payload if template.present?
-
         if response.error?
           self.errors.add :base, response.message
         else

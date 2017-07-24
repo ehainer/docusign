@@ -17,6 +17,11 @@ describe Docusign::DocumentHelper do
         e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
       end
     rescue => e
+      envelope = Docusign::Envelope.new(email_subject: Faker::Name.title, status: :sent) do |e|
+        e.add_document(file_fixture('pdf1.pdf').expand_path)
+        e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
+      end
+      puts envelope.send(:create_payload)
       puts e.backtrace
     end
   end
