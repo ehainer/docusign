@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{Docusign Integration}
   spec.homepage      = 'https://www.github.com/ehainer/docusign'
-  spec.license       = 'GNU GPL v3'
+  spec.license       = 'GPL-3.0'
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
