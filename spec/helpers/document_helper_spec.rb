@@ -9,7 +9,7 @@ describe Docusign::DocumentHelper do
   after(:each) do
     WebMock.disable_net_connect!
   end
-  
+
   let(:envelope) do
     begin
       Docusign::Envelope.create!(email_subject: Faker::Name.title, status: :sent) do |e|
@@ -21,6 +21,7 @@ describe Docusign::DocumentHelper do
         e.add_document(file_fixture('pdf1.pdf').expand_path)
         e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
       end
+      envelope.valid?
       puts envelope.send(:create_payload)
       puts e.backtrace
     end
