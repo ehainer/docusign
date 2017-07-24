@@ -22,7 +22,8 @@ describe Docusign::DocumentHelper do
         e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
       end
       envelope.valid?
-      puts envelope.send(:create_payload)
+      response = Docusign.client.post('envelopes', payload: envelope.send(:create_payload))
+      puts response.to_yaml
       puts e.backtrace
     end
   end
