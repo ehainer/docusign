@@ -20,16 +20,6 @@ describe Docusign do
 
     it 'can be created' do
       expect(template).to be_valid
-
-      @template = Docusign::Template.create!(email_subject: 'Important Document', name: 'Template Name') do |t|
-        t.add_document '/web/RedDot/spec/fixtures/files/pdf1.pdf'
-      end
-
-      @envelope = Docusign::Envelope.create!(template_id: @template.id, status: :sent) do |e|
-        e.add_signer name: 'Eric Hainer', email: 'eric@commercekitchen.com' do
-          sign_at 'Known Issues', 0, 125
-        end
-      end
     end
 
     it 'requires an email subject' do
