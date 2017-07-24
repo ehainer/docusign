@@ -17,7 +17,7 @@ describe Docusign::DocumentHelper do
         e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
       end
     rescue => e
-      puts e.to_yaml
+      puts e.backtrace
     end
   end
 
