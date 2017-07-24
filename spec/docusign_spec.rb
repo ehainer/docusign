@@ -2,6 +2,14 @@ require 'spec_helper'
 
 describe Docusign do
 
+  before(:each) do
+    WebMock.enable_net_connect!
+  end
+
+  after(:each) do
+    WebMock.disable_net_connect!
+  end
+
   it 'has a version number' do
     expect(Docusign::VERSION).not_to be nil
   end
