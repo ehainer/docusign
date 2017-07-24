@@ -13,4 +13,3 @@ docusign-*.gem
 *.sqlite3
 .byebug_history
 /uploads/
-initializers/docusign.rb
