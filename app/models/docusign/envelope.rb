@@ -13,8 +13,6 @@ module Docusign
 
     belongs_to :envelopable, polymorphic: true, optional: true
 
-    before_validation :include_template
-
     before_validation :validate_signers
 
     before_validation :create_envelope, on: :create
@@ -41,7 +39,6 @@ module Docusign
     end
 
     def url(name=nil, email=nil, **params)
-      send! unless sent?
       name ||= recipients.first.try(:name)
       email ||= recipients.first.try(:email)
       recipient_id ||= recipients.first.try(:recipient_id)
@@ -140,15 +137,6 @@ module Docusign
       # Ensure each signer has a recipient id before creating
       def validate_signers
         signers.map(&:valid?)
-      end
-
-      # If a template was specified, find it and copy the envelope related data over
-      def include_template
-        if template.present?
-          self.email_subject = template.email_subject
-          self.email_blurb = template.email_blurb
-          self.template_id = template.template_id
-        end
       end
 
       def reset_data
