@@ -1,3 +1,6 @@
+require 'open-uri'
+require 'net/http'
+
 module Docusign
   class Response
 
@@ -6,7 +9,11 @@ module Docusign
     def initialize(response=nil)
       @response = response
       begin
-        @response_data = JSON.parse(response.body).deep_transform_keys { |key| key.to_s.underscore.to_sym }
+        if response.is_a?(::Net::HTTPResponse)
+          @response_data = JSON.parse(response.body).deep_transform_keys { |key| key.to_s.underscore.to_sym }
+        else
+          @response_data = { error_code: 'NO_RESPONSE', message: 'Provided response object was not an instance of Net::HTTPResponse' }
+        end
       rescue => e
         @response_data = { error_code: 'PARSE_ERROR', message: e.message }
       end

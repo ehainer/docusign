@@ -1,32 +1,33 @@
 require 'openssl'
 require 'open-uri'
+require 'net/http'
 
 module Docusign
   class Client
 
     def get(path, **options)
       url = uri(path, options[:query])
-      request = Net::HTTP::Get.new(url.request_uri, default_headers.merge(options[:headers].to_h))
+      request = ::Net::HTTP::Get.new(url.request_uri, default_headers.merge(options[:headers].to_h))
       dispatch(url, request)
     end
 
     def delete(path, **options)
       url = uri(path)
-      request = Net::HTTP::Delete.new(url.request_uri, default_headers.merge(options[:headers].to_h))
+      request = ::Net::HTTP::Delete.new(url.request_uri, default_headers.merge(options[:headers].to_h))
       request.body = format_data(options[:payload]).to_json if options.has_key?(:payload)
       dispatch(url, request)
     end
 
     def put(path, **options)
       url = uri(path)
-      request = Net::HTTP::Put.new(url.request_uri, default_headers.merge(options[:headers].to_h))
+      request = ::Net::HTTP::Put.new(url.request_uri, default_headers.merge(options[:headers].to_h))
       request.body = format_data(options[:payload]).to_json if options.has_key?(:payload)
       dispatch(url, request)
     end
 
     def post(path, **options)
       url = uri(path)
-      request = Net::HTTP::Post.new(url.request_uri, default_headers.merge(options[:headers].to_h))
+      request = ::Net::HTTP::Post.new(url.request_uri, default_headers.merge(options[:headers].to_h))
       request.body = format_data(options[:payload]).to_json if options.has_key?(:payload)
       dispatch(url, request)
     end
@@ -57,7 +58,7 @@ module Docusign
 
       def http(url)
         url = uri(url) if url.is_a?(String)
-        net_http = Net::HTTP.new(url.host, url.port)
+        net_http = ::Net::HTTP.new(url.host, url.port)
         net_http.use_ssl = url.scheme == 'https'
 
         if net_http.use_ssl?
