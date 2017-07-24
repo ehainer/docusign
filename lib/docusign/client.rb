@@ -44,7 +44,7 @@ module Docusign
     end
 
     def base_url
-      primary = information.login_accounts([]).find { |account| account.account_id == Docusign.config.account_id.to_i } || {}
+      primary = information.login_accounts([]).find { |account| account.account_id == Docusign.config.account_id.to_i } || Docusign::Data.new
       primary.base_url || 'https://www.docusign.net/restapi'
     end
 

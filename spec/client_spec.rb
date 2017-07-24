@@ -54,8 +54,10 @@ describe Docusign::Client do
   end
 
   it 'will retrieve api information' do
+    WebMock.allow_net_connect!
     expect(client.information.login_accounts).to be_present
     expect(client.information.login_accounts).to be_a(Array)
+    WebMock.disable_net_connect!
   end
 
 end

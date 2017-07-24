@@ -1,6 +1,14 @@
 require 'spec_helper'
 
 describe Docusign::DocumentHelper do
+
+  before(:each) do
+    WebMock.allow_net_connect!
+  end
+
+  after(:each) do
+    WebMock.disable_net_connect!
+  end
   
   let(:envelope) do
     Docusign::Envelope.create!(email_subject: Faker::Name.title, status: :sent) do |e|
