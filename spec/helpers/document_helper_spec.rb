@@ -12,6 +12,7 @@ describe Docusign::DocumentHelper do
 
   let(:envelope) do
     begin
+      puts Docusign.client.information.to_yaml
       Docusign::Envelope.create!(email_subject: Faker::Name.title, status: :sent) do |e|
         e.add_document(file_fixture('pdf1.pdf').expand_path)
         e.add_signer(name: Faker::Name.name, email: 'sample@example.org')
