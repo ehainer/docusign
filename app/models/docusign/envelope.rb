@@ -41,6 +41,7 @@ module Docusign
     end
 
     def url(name=nil, email=nil, **params)
+      send! unless sent?
       name ||= recipients.first.try(:name)
       email ||= recipients.first.try(:email)
       recipient_id ||= recipients.first.try(:recipient_id)
