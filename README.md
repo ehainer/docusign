@@ -4,9 +4,9 @@
 
 # Docusign
 
-Trying to simplify the Docusign creation process.
+Trying to simplify the Docusign creation process and making the Docusign REST api more accessible for future use.
 
-<span color="red">**Note:** This gem is used on a different project and will likely only ever be updated as needed to support that project... unless I happen to become overcome with boredom and decide to implement a bunch more features.</span>
+**Note: This gem is used on a different project and will likely only ever be updated as needed to support that project... unless I happen to become overcome with boredom and decide to implement a bunch more features, and can tolerate trying to decrypt Docusign's API documentation for more than 3 minutes.**
 
 ## Installation
 
@@ -26,7 +26,7 @@ Or install it yourself as:
 
 ## Usage
 
-On any model you want to treat as a "signer" of a document, add `documentable` to create an association to documents:
+On any model you want to treat as a "signer" of an envelope/template, add `documentable` to create an association to both envelopes and templates:
 
 ```ruby
 class User < ApplicationRecord
@@ -36,41 +36,41 @@ class User < ApplicationRecord
 end
 ```
 
-With the new `envelopes` association you can now create embeddable Docusign documents with signers (among other things), like so:
+With the new `envelopes` and `templates` association you can now create embeddable Docusign documents with signers (among other things), like so:
 
 ```ruby
 @user = User.first
-# Subject is a required field, body is not. Both parameters translate to the email subject/body of the delivered document
-@user.envelopes.create(email_subject: 'New Document', email_blurb: 'Welcome to your new document')
+# Email subject is a required field, blurb is not. Both parameters translate to the email subject/body of the delivered document
+@user.envelopes.create(email_subject: 'New Document', email_blurb: 'Welcome to your new document', status: :sent)
 ```
+
+Note: The `status` parameter must be set to `sent` in order to actually embed the document. If not set, the default is a draft status, in which no signers may view the document. It is possible to create an envelope ahead of time and "sending" it later by calling `send!` on the instance when ready to embed/send the email.
 
 ### Determining the Default Signer
 
-By default, the signer will try to be obtained via one of two methods. First, it will look for a method on the documentable association named `to_signer`. This method, if defined should return a hash containing at least 4 keys: `name`, `email`, `role_name`, and `embedded`.
+If no signer information is provided (`add_signer` is called with no arguments), a method named `to_signer` will be called automatically (or tried, actually, so it fails gracefully) on the polymorphic association (i.e. - in the above example, on the `User` instance). This method should return a hash of signer data that conforms to the [signer](https://docs.docusign.com/esign/restapi/Envelopes/Envelopes/get/#/definitions/signer) definition. Keys in the hash can be specified either camelCase as per the Docusign documentation, or snake_case.
 
-If the `to_signer` method is not found, it will then try to call the `name` and `email` methods of the documentable association to obtain each. The default role_name is `Issuer` and the default embedded parameter is `true`, and 99% of the time should be fine.
-
-If the name or email could not be determined, the document will fail to save, and therefore not be created within Docusign. The resulting errors will be found on `<document>.errors`
+If the `to_signer` method does not exist or does not return a proper hash, the document will fail to save, and therefore not be created within Docusign. The resulting errors will be found on `<document>.errors`
 
 ### Customizing the Document
 
-Optionally, you can pass a block to either the `create` or `build` method of documents, and use the document argument passed to it to further tailor the document to your needs.
+Optionally, you can pass a block to either the `create` or `build` method of envelopes or templates, and use the argument passed to it to further tailor the document to your needs.
 
 ```ruby
 @user = User.first
-@user.envelopes.create(email_subject: 'New Document') do |d|
+@user.envelopes.create(email_subject: 'New Document') do |e|
   # Define the file you want to use as the document to sign.
   # You can provide as many file paths as you'd like in this method, or call it multiple times
-  d.add_document '/path/to/the/pdf/document.pdf'
+  e.add_document '/path/to/the/pdf/document.pdf'
   
   # Without arguments, will attempt to add the default signer per the rules laid out in 'Determining the Default Signer' above
-  d.add_signer
+  e.add_signer
   
   # Or pass a hash with signer data
-  d.add_signer name: 'Bob', email: 'bob@example.org', embedded: false
+  e.add_signer name: 'Bob', email: 'bob@example.org', embedded: false
   
   # Or, pass a block to add "tabs" to the document (see: "Defining Tabs" below for more information)
-  d.add_signer do
+  e.add_signer do
     sign_at 'Your Name', 0, 0
     initial_at 'Initial Here', 100, 0
   end
@@ -79,24 +79,35 @@ end
 
 ### Defining Tabs
 
-While Docusign itself does support a huge variety of [tabs](https://docs.docusign.com/esign/restapi/Envelopes/EnvelopeRecipientTabs/), the `docusign_rest` gem that this depends on, does not. As of the writing of this readme, this gem supports defining tabs that `docusign_rest` supports. The full list, including the method used to create each is:
+As of the time of this writing, the Docusign gem supports all defined [tabs](https://docs.docusign.com/esign/restapi/Envelopes/EnvelopeRecipientTabs/) in the Docusign api. Each method name is defined by the tab name followed by "_at" For example, "Date Signed" is defined at `date_signed_at`, "Envelope ID" is `envelope_id_at`. In the future, support for new tabs can be added just by manipulating the `Docusign.config.tabs` array in the config initializer. The array found there is what defines what methods are available for adding tabs.
 
-| Tab Type        | Method Name                 |
+For convenience, several shortcut methods have already been created for commonly used tabs, the details of which are:
+
+| Tab Type        | Method Name / Alias         |
 |-----------------|-----------------------------|
-| Text Input      | text_at                     |
-| Check box       | checkbox_at                 |
-| Number Input    | number_at                   |
-| Date Input      | date_at                     |
 | Date Signed     | date_signed_at / signed_at  |
-| Email Input     | email_at                    |
 | Full Name Input | full_name_at / fullname_at  |
-| List            | list_at                     |
 | Radio Button    | radio_group_at / radio_at   |
 | Initial         | inital_here_at / initial_at |
 | Signature       | sign_here_at / sign_at      |
-| Title           | title_at                    |
 
 For each tabs *_at method the arguments are the same. The first is a unique string of text to place the tab at (the anchor), the second is the offset X coordinate from that anchor position, the third is the Y offset from that anchor position, and the fourth is an optional hash of additonal parameters supported by docusign_rest (see the [get_tabs](https://github.com/jondkinney/docusign_rest/blob/master/lib/docusign_rest/client.rb#L465-L523) method for details on what parameters are supported)
+
+All of the first 3 arguments are in fact optional, so it is easy to omit them altogether and go straight to the additional parameters just by providing a hash. The first 3 arguments are just separate since they are likely to be the most often used. So basically:
+
+```ruby
+@user.envelopes.create(email_subject: 'New Document') do |e|
+  e.add_signer name: 'Bob Smith', email: 'bob@example.org' do
+    # Relative text, x offset, y offset
+    sign_at 'Your Name', 0, 0
+
+    # OR ...
+
+    # Just define a hash of parameters if you have no need for "relative" positioning
+    sign_at x_position: 275, y_position: 2542, tab_label: 'Sign Here'
+  end
+end
+```
 
 ### Embedding a Document for Signing
 
@@ -105,21 +116,21 @@ Once a document has been created, it can be embedded in an iframe by using the i
 ```ruby
 # Where @envelope is an instance of Docusign::Document
 <%= embedded_document(@envelope, width: 1000, height: 1200) %>
-# Or, to have a specific signer sign the document, provide the name and email of the recipient
-<%= embedded_document(@envelope, 'Bob Smith', 'bob@example.org', width: 1000, height: 1200) %>
+# Or, to have a specific signer sign the document, provide the instance of a specific signer as the second argument
+<%= embedded_document(@envelope, @signer, width: 1000, height: 1200) %>
 ```
 
-Where the first argument is the document you want to embded, the optional second and third arguments are the name/email of the signer you want to sign the document, and the optional last argument is a hash of html options for the iframe (i.e. - width, height, class, style, etc...)
+Where the first argument is the document you want to embded, the optional second argument is the signer (instance of `Docusign::Signer`) you want to sign the document, and the optional last argument is a hash of html options for the iframe (i.e. - width, height, class, style, etc...)
 
 If you prefer to not embed the document, you can retrieve the url of the signing page by calling the documents `url` method
 
 ```ruby
 <%= @envelope.url %>
-# Or, to have a specific signer sign the document, provide the name and email of the recipient
-<%= @envelope.url('Bob Smith', 'bob@example.org') %>
+# Or, to have a specific signer sign the document, provide the instance of the specific signer
+<%= @envelope.url(signer) %>
 ```
 
-The `url` method also accepts an optional third argument that's useful when not embedding, the return url for Docusign to redirect to after the user completes/declines/cancels the document. Docusign will redirect to that page with an `event` query string parameter representing the resulting user action (signing_complete, decline, cancel)
+Note that by default, calling `url` on the envelope should default to signing as the next eligible signer in the routing order. When a signer completes signing, it will update their status and cause the next call to `url` to choose the next eligible signer, if any.
 
 ## Development
 
