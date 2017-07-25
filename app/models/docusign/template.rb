@@ -36,6 +36,14 @@ module Docusign
       signer
     end
 
+    def set_data(key, value=nil)
+      if key.is_a?(Hash)
+        misc_data.deep_merge!(key.deep_symbolize_keys)
+      else
+        misc_data[key.to_sym] = value
+      end
+    end
+
     private
 
       # Get the last routing order from the current recipients, and increase by 1 to get the next order
@@ -71,14 +79,12 @@ module Docusign
         {
           email_subject: email_subject,
           email_blurb: email_blurb,
-          documents: envelope_documents,
+          documents: template_documents,
           envelope_template_definition: {
             description: description,
             name: name
           },
-          recipients: {
-            signers: envelope_signers
-          }
+          template_roles: template_signers
         }.deep_merge(misc_data)
       end
 
@@ -93,7 +99,7 @@ module Docusign
         }.deep_merge(misc_data)
       end
 
-      def envelope_documents
+      def template_documents
         idx = 0
         documents.map do |document|
           {
@@ -106,8 +112,11 @@ module Docusign
       end
 
       # Get the hash data of all signers
-      def envelope_signers
-        signers.map(&:to_docusign)
+      def template_signers
+        signers.map do |signer|
+          signer.role_name ||= "Issuer_#{signers.length+1}"
+          signer.to_docusign
+        end
       end
 
       # Ensure each signer has a recipient id before creating
@@ -117,14 +126,6 @@ module Docusign
 
       def reset_data
         @misc_data = {}
-      end
-
-      def method_missing(name, *args, &block)
-        if name.to_s =~ /^(\w*)=$/
-          misc_data[name.to_s.gsub(/=$/, '').to_sym] = args.first
-        else
-          super
-        end
       end
 
   end

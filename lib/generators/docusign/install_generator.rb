@@ -25,6 +25,10 @@ module Docusign
         copy_file 'app/uploaders/docusign/document_uploader.rb', Rails.root.join('app', 'uploaders', 'docusign', 'document_uploader.rb')
       end
 
+      def copy_controllers
+        copy_file 'app/controller/docusign/response_controller.rb', Rails.root.join('app', 'controllers', 'docusign', 'response_controller.rb')
+      end
+
       def copy_initializer
         create_file Rails.root.join('config', 'initializers', 'docusign.rb'), <<-CONTENT
 Docusign.setup do |config|

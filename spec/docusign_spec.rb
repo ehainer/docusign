@@ -54,19 +54,13 @@ describe Docusign do
       expect(template.signers.count).to eq(1)
     end
 
-    it 'will route all write method calls to the miscellaneous data' do
-      expect(template.send(:misc_data)).to eq({})
-      template.enable_wet_sign = false
-      expect(template.send(:misc_data)).to eq({ enable_wet_sign: false })
-    end
-
     it 'will not intercept non-write method calls' do
       expect { template.missing }.to raise_error(NoMethodError)
     end
 
     it 'will clear miscellaneous data after saving' do
       expect(template.send(:misc_data)).to eq({})
-      template.enable_wet_sign = false
+      template.set_data(:enable_wet_sign, false)
       expect(template.send(:misc_data)).to eq({ enable_wet_sign: false })
       template.save
       expect(template.send(:misc_data)).to eq({})
@@ -82,9 +76,17 @@ describe Docusign do
     it 'will have errors from Docusign if data is invalid when updating' do
       template.save
       expect(template.errors).to be_empty
-      template.enable_wet_sign = 'blahblahblah'
+      template.set_data(:enable_wet_sign, 'blahblahblah')
       template.save
       expect(template.errors).to_not be_empty
+    end
+
+    it 'accepts either a key/value or hash argument for setting miscellaneous data' do
+      expect(template.send(:misc_data)).to eq({})
+      template.set_data(:enable_wet_sign, false)
+      expect(template.send(:misc_data)).to eq({ enable_wet_sign: false })
+      template.set_data({ random_stuff: 'and things' })
+      expect(template.send(:misc_data)).to eq({ enable_wet_sign: false, random_stuff: 'and things' })
     end
 
   end
@@ -126,20 +128,14 @@ describe Docusign do
     it 'will have errors from Docusign if data is invalid when updating' do
       envelope.save
       expect(envelope.errors).to be_empty
-      envelope.enable_wet_sign = 'blahblahblah'
+      envelope.set_data(:enable_wet_sign, 'blahblahblah')
       envelope.save
       expect(envelope.errors).to_not be_empty
     end
 
-    it 'will route all write method calls to the miscellaneous data' do
-      expect(envelope.send(:misc_data)).to eq({})
-      envelope.enable_wet_sign = false
-      expect(envelope.send(:misc_data)).to eq({ enable_wet_sign: false })
-    end
-
     it 'will redirect to the disallowed page if the embedded document signer is not valid' do
       envelope.save
-      expect(envelope.url('Bologne', 'lame@mystery.com')).to eq('http://localhost:3000/docusign/response?event=disallowed&id=1&message=The+recipient+you+have+identified+is+not+a+valid+recipient+of+the+specified+envelope.')
+      expect(envelope.url(Docusign::Signer.new(name: 'Bologne', email: 'nunya@bizness.com'))).to eq('http://localhost:3000/docusign/response?envelope=1&event=disallowed&message=The+recipient+you+have+identified+is+not+a+valid+recipient+of+the+specified+envelope.')
     end
 
     it 'will use documents and signers from a template if defined' do
@@ -153,8 +149,12 @@ describe Docusign do
       expect(envelope.errors).to be_empty
     end
 
-    it 'will not intercept non-write method calls' do
-      expect { envelope.missing }.to raise_error(NoMethodError)
+    it 'accepts either a key/value or hash argument for setting miscellaneous data' do
+      expect(envelope.send(:misc_data)).to eq({})
+      envelope.set_data(:enable_wet_sign, false)
+      expect(envelope.send(:misc_data)).to eq({ enable_wet_sign: false })
+      envelope.set_data({ random_stuff: 'and things' })
+      expect(envelope.send(:misc_data)).to eq({ enable_wet_sign: false, random_stuff: 'and things' })
     end
 
   end
@@ -202,14 +202,12 @@ describe Docusign do
       end
     end
 
-    it 'will route all write method calls to the miscellaneous data' do
+    it 'accepts either a key/value or hash argument for setting miscellaneous data' do
       expect(signer.send(:misc_data)).to eq({})
-      signer.client_user_id = 'Special ID'
-      expect(signer.send(:misc_data)).to eq({ client_user_id: 'Special ID' })
-    end
-
-    it 'will not intercept non write method calls that are not defined' do
-      expect { signer.missing }.to raise_error(NoMethodError)
+      signer.set_data(:enable_wet_sign, false)
+      expect(signer.send(:misc_data)).to eq({ enable_wet_sign: false })
+      signer.set_data({ random_stuff: 'and things' })
+      expect(signer.send(:misc_data)).to eq({ enable_wet_sign: false, random_stuff: 'and things' })
     end
 
   end

@@ -38,20 +38,28 @@ module Docusign
       signer
     end
 
-    def url(name=nil, email=nil, **params)
-      name ||= recipients.first.try(:name)
-      email ||= recipients.first.try(:email)
-      recipient_id ||= recipients.first.try(:recipient_id)
-      params.deep_transform_keys! { |key| key.to_s.underscore.to_sym }
-      params[:return_url] ||= docusign_response_url(id: id)
-      response = Docusign.client.post("envelopes/#{envelope_id}/views/recipient", payload: { authentication_method: :email, user_name: name, email: email, client_user_id: email }.deep_merge(params))
-      if !response.error? && response.url
-        response.url
+    def set_data(key, value=nil)
+      if key.is_a?(Hash)
+        misc_data.deep_merge!(key.deep_symbolize_keys)
       else
-        docusign_response_url(id: id, event: :disallowed, message: response.message)
+        misc_data[key.to_sym] = value
       end
     end
 
+    def url(recipient=nil, **params)
+      # Get the first recipient in the list that has not declined or signed the document
+      recipient ||= recipients.find { |recipient| !recipient.declined? && !recipient.signed? }
+      params.deep_transform_keys! { |key| key.to_s.underscore.to_sym }
+      params[:return_url] ||= docusign_response_url(envelope: id, signer: recipient.try(:id))
+      response = Docusign.client.post("envelopes/#{envelope_id}/views/recipient", payload: { authentication_method: :email, user_name: recipient.try(:name), email: recipient.try(:email), client_user_id: recipient.try(:email) }.deep_merge(params))
+      if !response.error? && response.url
+        response.url
+      else
+        docusign_response_url(envelope: id, signer: recipient.try(:id), event: :disallowed, message: response.message)
+      end
+    end
+
+    # TODO: Consider separating instead of concatenating all signers
     def recipients
       (((template rescue nil).try(:signers) || []) + signers).sort_by { |s| s.routing_order.to_i }
     end
@@ -131,7 +139,10 @@ module Docusign
 
       # Get the hash data of all signers
       def envelope_signers
-        signers.map(&:to_docusign)
+        signers.map do |signer|
+          signer.role_name ||= "Issuer_#{signers.count { |s| s.role_name.present? }+1}"
+          signer.to_docusign
+        end
       end
 
       # Ensure each signer has a recipient id before creating
@@ -141,14 +152,6 @@ module Docusign
 
       def reset_data
         @misc_data = {}
-      end
-
-      def method_missing(name, *args, &block)
-        if name.to_s =~ /^(\w*)=$/
-          misc_data[name.to_s.gsub(/=$/, '').to_sym] = args.first
-        else
-          super
-        end
       end
 
   end

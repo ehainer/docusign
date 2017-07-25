@@ -5,9 +5,11 @@ module Docusign
 
     serialize :tabs, JSON
 
+    before_validation :set_recipient_id, only: :create
+
     validates_presence_of :name, :email, :role_name, :recipient_id
 
-    before_validation :set_recipient_id, only: :create
+    enum status: ['pending', 'signed', 'declined', 'canceled', 'expired', 'denied']
 
     Docusign.config.tabs.each do |type|
       define_method "#{type}_at" do |text=nil, x=0, y=0, **params|
@@ -18,6 +20,14 @@ module Docusign
           anchor_x_offset: x,
           anchor_y_offset: y
         }.reject { |_,v| v.nil? }.merge(params)
+      end
+    end
+
+    def set_data(key, value=nil)
+      if key.is_a?(Hash)
+        misc_data.deep_merge!(key.deep_symbolize_keys)
+      else
+        misc_data[key.to_sym] = value
       end
     end
 
@@ -52,14 +62,6 @@ module Docusign
 
       def set_recipient_id
         self.recipient_id = Digest::MD5.hexdigest([name, email, role_name].join)
-      end
-
-      def method_missing(name, *args, &block)
-        if name.to_s =~ /^(\w*)=$/
-          misc_data[name.to_s.gsub(/=$/, '').to_sym] = args.first
-        else
-          super
-        end
       end
 
   end
