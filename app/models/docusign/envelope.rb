@@ -21,7 +21,7 @@ module Docusign
 
     after_save :reset_data
 
-    enum status: ['created', 'sent', 'voided', 'access_code_failed', 'cancel', 'decline', 'exception', 'fax_pending', 'id_check_failed', 'session_timeout', 'signing_complete', 'ttl_expired', 'viewing_complete', 'disallowed']
+    enum status: ['created', 'deleted', 'sent', 'delivered', 'signed', 'completed', 'voided', 'timed_out', 'authoritative_copy', 'transfer_completed', 'template', 'correct']
 
     accepts_nested_attributes_for :signers
 
@@ -62,6 +62,13 @@ module Docusign
     # TODO: Consider separating instead of concatenating all signers
     def recipients
       (((template rescue nil).try(:signers) || []) + signers).sort_by { |s| s.routing_order.to_i }
+    end
+
+    def sync_status_from_docusign
+      self.status = docusign_status
+
+      # Skip validations to avoid sending status back up to docusign
+      self.save(validate: false)
     end
 
     alias_method :send!, :sent!
@@ -121,7 +128,7 @@ module Docusign
         {
           email_subject: email_subject,
           email_blurb: email_blurb,
-          status: sent? ? 'sent' : 'created'
+          status: sent? ? 'sent' : nil
         }.deep_merge(misc_data)
       end
 
@@ -152,6 +159,10 @@ module Docusign
 
       def reset_data
         @misc_data = {}
+      end
+
+      def docusign_status
+        Docusign.client.get("envelopes/#{envelope_id}").response_data[:status]
       end
 
   end
