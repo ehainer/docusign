@@ -157,6 +157,20 @@ describe Docusign do
       expect(envelope.send(:misc_data)).to eq({ enable_wet_sign: false, random_stuff: 'and things' })
     end
 
+    it 'will update envelope to status other than created or sent' do
+      envelope.save
+      envelope.update!(status: 'completed')
+      expect(envelope.status).to eq('completed')
+    end
+
+    it 'can sync envelope status from docusign' do
+      envelope.save
+      envelope.status = 'voided'
+      expect(envelope.status).to eq('voided')
+      envelope.sync_status_from_docusign
+      expect(envelope.status).to eq('created')
+    end
+
   end
 
   context 'Signer' do

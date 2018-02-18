@@ -7,7 +7,7 @@ module Docusign
       @template = "docusign/response/codes/#{@event}"
       @envelope = Docusign::Envelope.find(params[:envelope])
       @signer = Docusign::Signer.find(params[:signer])
-      @envelope.update(status: @event) if @envelope.present?
+      @envelope.sync_status_from_docusign if @envelope.present?
       @signer.update(status: signer_status) if @signer.present?
     end
 

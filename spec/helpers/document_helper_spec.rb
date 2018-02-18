@@ -22,7 +22,7 @@ describe Docusign::DocumentHelper do
     h = [*1000..3000].sample
     iframe = embedded_document(envelope, width: w, height: h)
     expect(iframe).to include("<iframe width=\"#{w}\" height=\"#{h}\"")
-    expect(iframe).to include('https://demo.docusign.net/Signing/startinsession.aspx')
+    expect(iframe).to include('https://demo.docusign.net/Signing/StartInSession.aspx')
   end
 
 end
